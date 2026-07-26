@@ -1,0 +1,68 @@
+# =============================================================================
+# SentinelOps demo workload values.
+# Images are built locally and loaded into kind (`kind load docker-image`), so
+# pullPolicy is IfNotPresent and there is no registry prefix.
+# =============================================================================
+
+image:
+  tag: dev
+  pullPolicy: IfNotPresent
+
+dbSecretName: demo-db-credentials
+
+postgres:
+  serviceName: demo-postgres
+  image: postgres:16-alpine
+  user: sentinelops
+  password: sentinelops
+  # Each service gets its own logical database.
+  databases:
+    - orderdb
+    - inventorydb
+    - paymentdb
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+# Default resource envelope for every service (overridable per service below).
+defaultResources:
+  requests:
+    cpu: 150m
+    memory: 320Mi
+  limits:
+    cpu: 500m
+    memory: 640Mi
+
+services:
+  inventory:
+    name: inventory-service
+    image: sentinelops/inventory-service
+    replicas: 1
+    db: inventorydb
+    env:
+      INVENTORY_DELAY_MS: "0"
+
+  payment:
+    name: payment-service
+    image: sentinelops/payment-service
+    replicas: 1
+    db: paymentdb
+    env:
+      PAYMENT_DELAY_MS: "0"
+      PAYMENT_DECLINE_RATE: "0.0"
+
+  order:
+    name: order-service
+    image: sentinelops/order-service
+    replicas: 1
+    db: orderdb
+    nodePort: 30080          # exposed to the host for the dashboard / curl
+    env:
+      INVENTORY_URL: "http://inventory-service:8080"
+      PAYMENT_URL: "http://payment-service:8080"
+      TOMCAT_MAX_THREADS: "25"
+      HTTP_READ_TIMEOUT_MS: "2000"

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SentinelOps postmortem dataset",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "id", "title", "date", "affected_services", "service_types", "symptoms",
+      "symptom_type", "error_signatures", "error_pattern_category",
+      "root_cause", "fix", "source_url"
+    ],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "title": { "type": "string", "minLength": 8 },
+      "date": { "type": "string", "format": "date" },
+      "affected_services": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+      "service_types": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+      "symptoms": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+      "symptom_type": {
+        "type": "string",
+        "enum": ["latency", "error-rate", "crash", "resource-exhaustion", "data-loss", "security", "network"]
+      },
+      "error_signatures": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+      "error_pattern_category": { "type": "string", "minLength": 3 },
+      "root_cause": { "type": "string", "minLength": 20 },
+      "fix": { "type": "string", "minLength": 20 },
+      "source_url": { "type": "string", "format": "uri" }
+    }
+  }
+}

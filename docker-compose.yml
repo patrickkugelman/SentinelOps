@@ -1,0 +1,37 @@
+# =============================================================================
+# SentinelOps — local infrastructure that lives OUTSIDE the kind cluster.
+#
+# Right now this is just the incident-memory store (Postgres + pgvector).
+# The demo microservices, Prometheus, and Chaos Mesh run INSIDE the kind
+# cluster (see scripts/ and helm/), not here.
+#
+#   docker compose up -d      # start pgvector
+#   docker compose down       # stop (keeps data volume)
+#   docker compose down -v    # stop and wipe the DB
+# =============================================================================
+name: sentinelops
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: sentinelops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sentinelops}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinelops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinelops}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs once on first init (empty data dir): enables pgvector + base schema.
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinelops} -d ${POSTGRES_DB:-sentinelops}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+    name: sentinelops-pgdata

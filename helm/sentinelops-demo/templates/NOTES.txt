@@ -1,0 +1,18 @@
+SentinelOps demo workload deployed to namespace: {{ .Release.Namespace }}
+
+Services:
+{{- range $k, $svc := .Values.services }}
+  - {{ $svc.name }} (db: {{ $svc.db }}){{ if $svc.nodePort }}  ->  NodePort {{ $svc.nodePort }}{{ end }}
+{{- end }}
+  - {{ .Values.postgres.serviceName }} (Postgres)
+
+Watch rollout:
+  kubectl -n {{ .Release.Namespace }} get pods -w
+
+Try a checkout (order-service is on host port 30080 via kind):
+  curl -s -X POST http://localhost:30080/orders/checkout \
+       -H 'Content-Type: application/json' \
+       -d '{"sku":"SKU-LAPTOP","quantity":1}' | jq
+
+List orders:
+  curl -s http://localhost:30080/orders | jq

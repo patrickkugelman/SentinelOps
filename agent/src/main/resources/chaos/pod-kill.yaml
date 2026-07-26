@@ -1,0 +1,19 @@
+# Kills one inventory-service pod. Kubernetes reschedules it; the agent should
+# detect the blip and correlate it to a "pod crash / restart" precedent.
+# Directly kubectl-applyable; the agent overrides name/target/namespace at runtime.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: pod-kill-inventory
+  namespace: sentinelops-demo
+  labels:
+    app.kubernetes.io/managed-by: sentinelops-agent
+    sentinelops.io/experiment: pod-kill
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - sentinelops-demo
+    labelSelectors:
+      app.kubernetes.io/name: inventory-service

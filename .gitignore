@@ -1,0 +1,52 @@
+# ---- Secrets / env ----
+.env
+.env.local
+*.local.env
+
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+dependency-reduced-pom.xml
+
+# ---- Node / Vue / Vite ----
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Python (dataset tooling) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.python-version
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.sample.json
+.DS_Store
+
+# ---- Kubernetes / local infra ----
+kubeconfig
+*.kubeconfig
+.kube-local/
+
+# ---- Docker / data volumes ----
+data/
+pgdata/
+
+# ---- Build/test artifacts ----
+coverage/
+*.log
+tmp/

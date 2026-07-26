@@ -1,0 +1,35 @@
+# =============================================================================
+# kind (Kubernetes-in-Docker) cluster for SentinelOps.
+#
+# - 1 control-plane + 2 workers: enough to schedule the 3 demo services +
+#   Postgres + observability + Chaos Mesh and still show pods rescheduling
+#   when we kill one.
+# - extraPortMappings expose NodePorts to the host so the dashboard/agent on
+#   your host (or WSL) can reach in-cluster services without port-forwarding:
+#     30080 -> demo app ingress (order-service)
+#     30090 -> Prometheus
+#     30030 -> Grafana (optional)
+# =============================================================================
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: sentinelops
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 30080   # demo app (order-service NodePort)
+        hostPort: 30080
+        protocol: TCP
+      - containerPort: 30090   # Prometheus NodePort
+        hostPort: 30090
+        protocol: TCP
+      - containerPort: 30030   # Grafana NodePort (optional)
+        hostPort: 30030
+        protocol: TCP
+  - role: worker
+  - role: worker

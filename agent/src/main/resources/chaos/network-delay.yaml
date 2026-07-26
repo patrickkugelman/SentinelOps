@@ -1,0 +1,26 @@
+# Injects 4s latency (±200ms jitter) into traffic reaching inventory-service.
+# order-service calls then exceed its 2s read-timeout, its worker pool backs up,
+# and checkout error-rate climbs — the classic cascading-latency failure.
+# Auto-recovers after `duration`.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-delay-inventory
+  namespace: sentinelops-demo
+  labels:
+    app.kubernetes.io/managed-by: sentinelops-agent
+    sentinelops.io/experiment: network-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - sentinelops-demo
+    labelSelectors:
+      app.kubernetes.io/name: inventory-service
+  direction: to
+  delay:
+    latency: "4s"
+    jitter: "200ms"
+    correlation: "50"
+  duration: "60s"

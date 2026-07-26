@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Aggregator: lets you build/verify all three services at once with
+         `mvn -f services package`. Each service still has its own pom whose
+         parent is spring-boot-starter-parent, so per-service Docker builds
+         (which copy only that module) stay self-contained. -->
+    <groupId>io.sentinelops</groupId>
+    <artifactId>sentinelops-services</artifactId>
+    <version>0.1.0</version>
+    <packaging>pom</packaging>
+    <name>SentinelOps Demo Services</name>
+
+    <modules>
+        <module>inventory-service</module>
+        <module>payment-service</module>
+        <module>order-service</module>
+    </modules>
+</project>

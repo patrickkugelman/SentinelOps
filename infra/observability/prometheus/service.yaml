@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: sentinelops-observability
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  # NodePort 30090 is mapped to the host by infra/kind/kind-config.yaml, so the
+  # agent (and the Prometheus UI) are reachable at http://localhost:30090.
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: prometheus
+  ports:
+    - name: web
+      port: 9090
+      targetPort: web
+      nodePort: 30090

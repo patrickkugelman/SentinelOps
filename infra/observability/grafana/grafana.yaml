@@ -1,0 +1,151 @@
+# Optional Grafana for the demo. Anonymous viewer access is enabled so you can
+# open it during an interview without logging in. Datasource + one dashboard are
+# provisioned declaratively from ConfigMaps — no click-ops.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: sentinelops-observability
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: sentinelops-observability
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: sentinelops
+        orgId: 1
+        folder: SentinelOps
+        type: file
+        disableDeletion: false
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: sentinelops-observability
+data:
+  demo-overview.json: |
+    {
+      "title": "SentinelOps — Demo Overview",
+      "uid": "sentinelops-demo",
+      "schemaVersion": 39,
+      "time": {"from": "now-15m", "to": "now"},
+      "refresh": "10s",
+      "panels": [
+        {
+          "type": "timeseries", "title": "Request rate by service (req/s)",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [{"expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sentinelops-demo\"}[1m]))", "legendFormat": "{{app}}"}]
+        },
+        {
+          "type": "timeseries", "title": "5xx error rate by service (req/s)",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [{"expr": "sum by (app) (rate(http_server_requests_seconds_count{namespace=\"sentinelops-demo\",status=~\"5..\"}[1m]))", "legendFormat": "{{app}}"}]
+        },
+        {
+          "type": "timeseries", "title": "p95 latency by service (s)",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [{"expr": "histogram_quantile(0.95, sum by (app, le) (rate(http_server_requests_seconds_bucket{namespace=\"sentinelops-demo\"}[5m])))", "legendFormat": "{{app}}"}]
+        },
+        {
+          "type": "timeseries", "title": "Checkout outcomes (req/s)",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [{"expr": "sum by (result) (rate(orders_checkout_total[1m]))", "legendFormat": "{{result}}"}]
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: sentinelops-observability
+  labels:
+    app.kubernetes.io/name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.2.0
+          env:
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: "Viewer"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: "sentinelops"
+            - name: GF_USERS_DEFAULT_THEME
+              value: "dark"
+          ports:
+            - name: web
+              containerPort: 3000
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: web
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: sentinelops-observability
+  labels:
+    app.kubernetes.io/name: grafana
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: grafana
+  ports:
+    - name: web
+      port: 3000
+      targetPort: web
+      nodePort: 30030

@@ -1,0 +1,23 @@
+# Pins CPU on payment-service (2 workers at ~90% load). Payment latency climbs,
+# authorize calls slow, and checkout degrades — a resource-exhaustion signature.
+# Auto-recovers after `duration`.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: cpu-stress-payment
+  namespace: sentinelops-demo
+  labels:
+    app.kubernetes.io/managed-by: sentinelops-agent
+    sentinelops.io/experiment: cpu-stress
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - sentinelops-demo
+    labelSelectors:
+      app.kubernetes.io/name: payment-service
+  stressors:
+    cpu:
+      workers: 2
+      load: 90
+  duration: "60s"

@@ -1,0 +1,28 @@
+# Partitions order-service from inventory-service (order can't reach inventory).
+# Reservations fail outright, so checkout fails fast with connection errors —
+# a different signature from slow latency. Auto-recovers after `duration`.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-partition-order-inventory
+  namespace: sentinelops-demo
+  labels:
+    app.kubernetes.io/managed-by: sentinelops-agent
+    sentinelops.io/experiment: network-partition
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - sentinelops-demo
+    labelSelectors:
+      app.kubernetes.io/name: order-service
+  direction: to
+  target:
+    mode: all
+    selector:
+      namespaces:
+        - sentinelops-demo
+      labelSelectors:
+        app.kubernetes.io/name: inventory-service
+  duration: "60s"
