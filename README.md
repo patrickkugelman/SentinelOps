@@ -67,8 +67,9 @@ The agent's decision loop and the component/sequence diagrams are in
 | Observability    | Prometheus (Grafana optional)                                  |
 | Chaos injection  | Chaos Mesh (pod-kill, network-delay, network-partition, CPU)   |
 | Incident memory  | PostgreSQL + `pgvector`, hybrid structured + vector retrieval   |
-| Agent            | Java 21, Spring Boot 3 — tools, decision loop, guardrails       |
+| Agent            | Java 21, Spring Boot 3, **Spring AI** (`ChatClient`) — tools, decision loop, guardrails |
 | Dashboard        | Vue 3 + Vite + TypeScript, live trace over SSE                 |
+| Eval tooling     | **Python** retrieval-quality harness (precision@k, MRR) against the live agent |
 
 ---
 
@@ -132,6 +133,12 @@ Full per-phase setup/verify and the test suites are in
   real and local. The postmortems are **curated original summaries** of real public
   incidents, each linked to its `source_url` — no source text redistributed.
 
+- **Retrieval quality is measured, not assumed.** Besides the in-process Java test,
+  a standalone **Python** harness (`incident-memory/retrieval_eval.py`) black-box
+  tests the live `/api/incidents/retrieve` endpoint against 8 benchmark incident
+  signatures and reports precision@1, precision@3, and MRR — usable as a CI gate
+  via `--min-precision-at-3`.
+
 ---
 
 ## Repository layout
@@ -142,8 +149,8 @@ Full per-phase setup/verify and the test suites are in
 ├── helm/              sentinelops-demo chart                            — Phase 2
 ├── infra/             db bootstrap, kind config, observability manifests
 ├── chaos/             Chaos Mesh docs + trigger helper                  — Phase 4
-├── incident-memory/   dataset schema + validator (dataset lives in agent) — Phase 5
-├── agent/             Spring Boot agent: tools, memory, planner, loop   — Phases 3,5,6
+├── incident-memory/   dataset schema, validator + Python retrieval-quality eval — Phase 5
+├── agent/             Spring Boot + Spring AI agent: tools, memory, planner, loop — Phases 3,5,6
 ├── dashboard/         Vue 3 + Vite + TS SPA                             — Phase 7
 ├── scripts/           setup / teardown / per-phase installers / demo (bash, WSL2)
 └── docs/              ARCHITECTURE · RUNBOOK · DEMO
